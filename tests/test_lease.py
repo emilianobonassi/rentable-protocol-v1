@@ -122,8 +122,8 @@ def test_subscribe_lease(rentable, testNFT, paymentToken, yrentable, accounts, w
     )
 
     # Test subscribtion
-    subscriptionDuration = 700 # blocks
-    value = "0.7 ether"
+    subscriptionDuration = 70 # blocks
+    value = "0.07 ether"
 
     preBalanceFeeCollector = weth.balanceOf(feeCollector) if paymentToken == weth.address else feeCollector.balance()
 
@@ -194,8 +194,8 @@ def test_subscribe_lease_via_depositAndList(rentable, testNFT, paymentToken, yre
     rentable.depositAndList(testNFT, tokenId, paymentToken, maxTimeDuration, pricePerBlock, {"from": user})
 
     # Test subscribtion
-    subscriptionDuration = 800 # blocks
-    value = "0.8 ether"
+    subscriptionDuration = 80 # blocks
+    value = "0.08 ether"
 
     preBalanceFeeCollector = weth.balanceOf(feeCollector) if paymentToken == weth.address else feeCollector.balance()
 
@@ -267,8 +267,8 @@ def test_redeem_lease(rentable, testNFT, paymentToken, weth, accounts, chain, fe
     )
 
     # Create subscribtion
-    subscriptionDuration = 800
-    value = "0.8 ether"
+    subscriptionDuration = 80
+    value = "0.08 ether"
     txCreate = None
     preBalanceSubscriber = postBalanceSubscriber = 0
 
@@ -292,10 +292,10 @@ def test_redeem_lease(rentable, testNFT, paymentToken, weth, accounts, chain, fe
     assert evt['tokenAddress'] == testNFT.address
     assert evt['tokenId'] == tokenId
 
-    # Redeem collateral after 100 blocks
+    # Redeem collateral after 10 blocks
     totalRedeemed = 0
     totalFeesRedeemed = 0
-    time = 100
+    time = 10
     chain.mine(time)
 
     leasePreRedeem = initialLease = rentable.currentLeases(testNFT, tokenId).dict()
@@ -342,7 +342,7 @@ def test_redeem_lease(rentable, testNFT, paymentToken, weth, accounts, chain, fe
     assert eternalstorage.getAddressValue(dummylib.TO()) == subscriber.address
     assert eternalstorage.getUIntValue(dummylib.DURATION()) == subscriptionDuration
 
-    # Redeem collateral after 100 blocks
+    # Redeem collateral after 10 blocks
 
     chain.mine(time)
 
@@ -455,8 +455,8 @@ def test_do_not_withdraw_on_lease(rentable, testNFT, paymentToken, weth, yrentab
     )
 
     # Test subscribtion
-    subscriptionDuration = 400
-    value = "0.4 ether"
+    subscriptionDuration = 40
+    value = "0.04 ether"
 
     if (paymentToken == weth.address):
         weth.deposit({"from": subscriber, "value": value})
@@ -505,8 +505,8 @@ def test_transfer_lease(rentable, testNFT, paymentToken, weth, accounts, wrentab
     )
 
     # Test subscribtion
-    subscriptionDuration = 400
-    value = "0.4 ether"
+    subscriptionDuration = 40
+    value = "0.04 ether"
 
     if (paymentToken == weth.address):
         weth.deposit({"from": subscriber, "value": value})
@@ -566,8 +566,8 @@ def test_transfer_ownership_during_lease(rentable, testNFT, paymentToken, weth, 
     )
 
     # Test subscribtion
-    subscriptionDuration = 400
-    value = "0.4 ether"
+    subscriptionDuration = 40
+    value = "0.04 ether"
 
     if (paymentToken == weth.address):
         weth.deposit({"from": subscriber, "value": value})
