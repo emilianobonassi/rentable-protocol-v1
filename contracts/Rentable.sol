@@ -211,9 +211,12 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
         emit UpdateLeaseConditions(tokenAddress, tokenId, paymentTokenAddress, maxTimeDuration, pricePerBlock);
     }
 
+    function _isExpired(Lease memory lease) internal virtual returns (bool) {
+        return block.number > lease.eta;
+    }
     function _expireLease(uint256 leaseId) internal virtual {
         Lease memory lease = _leases[leaseId];
-        require(block.number > lease.eta, "Current lease still pending");
+        require(_isExpired(lease), "Current lease still pending");
         if (WRentable(_wrentables[lease.tokenAddress]).exists(lease.tokenId)) {
             WRentable(_wrentables[lease.tokenAddress]).burn(lease.tokenId);
             _postExpireRent(leaseId, lease.tokenAddress, lease.tokenId, lease.from,  lease.to);
@@ -402,7 +405,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
         if (leaseId != 0) {
             Lease storage currentLease = _leases[leaseId];
             currentLease.from = to;
-            rented = block.number > currentLease.eta;
+            rented = !(_isExpired(currentLease));
         }
 
         address lib = _libraries[tokenAddress];

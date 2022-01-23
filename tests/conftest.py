@@ -16,7 +16,6 @@ def weth(WETH9, deployer):
 def orentable(deployer, ORentable, testNFT):
     yield ORentable.deploy(testNFT, {"from": deployer})
 
-
 @pytest.fixture
 def yrentable(deployer, YRentable):
     yield YRentable.deploy({"from": deployer})
@@ -33,6 +32,14 @@ def dummylib(deployer, DummyCollectionLibrary, eternalstorage):
 def eternalstorage(deployer, EternalStorage):
     yield EternalStorage.deploy({"from": deployer})
 
+@pytest.fixture
+def testLand(deployer, TestLand):
+    yield TestLand.deploy({"from": deployer})
+
+@pytest.fixture
+def decentralandCollectionLibrary(deployer, DecentralandCollectionLibrary):
+    yield DecentralandCollectionLibrary.deploy({"from": deployer})
+
 @pytest.fixture(
     params=[
         ["0 ether", 0],
@@ -47,16 +54,26 @@ def eternalstorage(deployer, EternalStorage):
         'fixed-fee-fee'
     ]
 )
-def rentable(deployer, Rentable, orentable, yrentable, wrentable, testNFT, feeCollector, request):
+def rentable(deployer, Rentable, ORentable, WRentable, orentable, yrentable, wrentable, testNFT, feeCollector, testLand, decentralandCollectionLibrary, request):
     n = Rentable.deploy({"from": deployer})
-    n.setORentable(testNFT, orentable)
-    orentable.setRentable(n)
 
     n.setYToken(yrentable)
     yrentable.setMinter(n)
 
+    n.setORentable(testNFT, orentable)
+    orentable.setRentable(n)
+
     wrentable.setRentable(n)
     n.setWRentable(testNFT, wrentable)
+
+    # Decentraland init
+    od = ORentable.deploy(testLand, {"from": deployer})
+    od.setRentable(n)
+    n.setORentable(testLand, od)
+    wd = WRentable.deploy(testLand, {"from": deployer})
+    wd.setRentable(n)
+    n.setWRentable(testLand, wd)
+    n.setLibrary(testLand, decentralandCollectionLibrary)
 
     n.setFixedFee(request.param[0])
     n.setFee(request.param[1])
