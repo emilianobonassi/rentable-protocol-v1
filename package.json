@@ -11,11 +11,12 @@
     "deploy": "brownie run deploy",
     "mintNFT": "brownie run mintNFT",
     "console": "brownie console",
+    "test": "brownie test --network development",
     "fixture:realScenario": "brownie run realScenario"
   },
   "devDependencies": {
     "dotenv": "^10.0.0",
     "ganache-cli": "^6.12.2",
-    "hardhat": "^2.6.5"
+    "hardhat": "^2.8.2"
   }
 }

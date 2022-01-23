@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Unlicense
 
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./ORentable.sol";
 import "./YRentable.sol";
@@ -14,6 +15,7 @@ import "./WRentable.sol";
 
 contract Rentable is Ownable, IERC721Receiver {
 
+    using Address for address;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -47,6 +49,7 @@ contract Rentable is Ownable, IERC721Receiver {
 
     mapping (address => address) internal _wrentables;
     mapping (address => ORentable) internal _orentables;
+
 
     uint256 constant public BASE_FEE = 10000;
     uint256 internal _fixedFee;
@@ -224,7 +227,7 @@ contract Rentable is Ownable, IERC721Receiver {
             Lease memory currentLease = _leases[leaseId];
             require(block.number > currentLease.eta, "Current lease still pending");
             if (WRentable(_wrentables[tokenAddress]).exists(tokenId)) {
-                WRentable(_wrentables[tokenAddress]).burn(tokenId);
+                WRentable(_wrentables[tokenAddress]).burn(tokenId); 
                 emit RentEnds(currentLease.from, currentLease.to, tokenAddress, tokenId, leaseId);
             }
         }
@@ -275,7 +278,7 @@ contract Rentable is Ownable, IERC721Receiver {
         _currentLeases[tokenAddress][tokenId] = leaseId;
 
         WRentable(_wrentables[tokenAddress]).mint(user, tokenId);
-
+        
         emit Rent(from, user, tokenAddress, tokenId, leaseId);
     }
 
@@ -296,6 +299,7 @@ contract Rentable is Ownable, IERC721Receiver {
 
             if (WRentable(_wrentables[lease2redeem.tokenAddress]).exists(lease2redeem.tokenId)) {
                 WRentable(_wrentables[lease2redeem.tokenAddress]).burn(lease2redeem.tokenId);
+
                 emit RentEnds(lease2redeem.from, lease2redeem.to, lease2redeem.tokenAddress, lease2redeem.tokenId, leaseId);
             }
         } else {
@@ -347,6 +351,30 @@ contract Rentable is Ownable, IERC721Receiver {
 
         emit Claim(user, lease2redeem.tokenAddress, lease2redeem.tokenId, lease2redeem.paymentTokenAddress, amount2Redeem, leaseId);
     }
+
+    function afterWTokenTransfer(address tokenAddress, address from, address to, uint256 tokenId) external {
+        require(msg.sender == _wrentables[tokenAddress], "Only proper WRentables allowed");
+
+        uint256 leaseId = _currentLeases[tokenAddress][tokenId];
+        if (leaseId != 0) { 
+            Lease storage currentLease = _leases[leaseId];
+            currentLease.to = to;
+        }
+    }
+
+
+    function afterOTokenTransfer(address tokenAddress, address from, address to, uint256 tokenId) external {
+        require(msg.sender == address(_orentables[tokenAddress]), "Only proper ORentables allowed");
+
+        uint256 leaseId = _currentLeases[tokenAddress][tokenId];
+        bool rented = false;
+        if (leaseId != 0) {
+            Lease storage currentLease = _leases[leaseId];
+            currentLease.from = to;
+            rented = block.number > currentLease.eta;
+        }
+    }
+
 
     function onERC721Received(
         address operator,

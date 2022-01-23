@@ -45,7 +45,7 @@ def wrentable(deployer, WRentable, testNFT):
 def rentable(deployer, Rentable, orentable, yrentable, wrentable, testNFT, feeCollector, request):
     n = Rentable.deploy({"from": deployer})
     n.setORentable(testNFT, orentable)
-    orentable.setMinter(n)
+    orentable.setRentable(n)
 
     n.setYToken(yrentable)
     yrentable.setMinter(n)

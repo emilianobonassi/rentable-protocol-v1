@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Unlicense
 
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.11;
 
 import "./ERC721ReadOnlyProxy.sol";
 
@@ -43,5 +43,10 @@ contract WRentable is ERC721ReadOnlyProxy {
 
     function exists(uint256 tokenId) external view virtual returns (bool) {
         return super._exists(tokenId);
+    }
+
+    function _transfer(address from, address to, uint256 tokenId) override internal virtual {
+        super._transfer(from, to, tokenId);
+        Rentable(_rentable).afterWTokenTransfer(_wrapped, from, to, tokenId);
     }
 }

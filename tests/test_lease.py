@@ -445,3 +445,109 @@ def test_do_not_withdraw_on_lease(rentable, testNFT, paymentToken, weth, yrentab
     chain.mine(400 + 1)
 
     rentable.withdraw(testNFT, tokenId, {"from": user})
+
+
+
+def test_transfer_lease(rentable, testNFT, paymentToken, weth, accounts, wrentable):
+    user = accounts[0]
+    subscriber = accounts[1]
+
+    tokenId = 123
+
+    testNFT.mint(user, tokenId, {"from": user})
+
+    testNFT.approve(rentable, tokenId, {"from": user})
+
+    rentable.deposit(testNFT, tokenId, {"from": user})
+
+    maxTimeDuration = 1000  # blocks
+    pricePerBlock = 0.001 * (10 ** 18)
+
+    rentable.createOrUpdateLeaseConditions(
+        testNFT, tokenId, paymentToken, maxTimeDuration, pricePerBlock, {"from": user}
+    )
+
+    # Test subscribtion
+    subscriptionDuration = 400
+    value = "0.4 ether"
+
+    if (paymentToken == weth.address):
+        weth.deposit({"from": subscriber, "value": value})
+        weth.approve(rentable, value, {"from": subscriber})
+        tx = rentable.createLease(testNFT, tokenId, subscriptionDuration, {"from": subscriber})
+    elif (paymentToken == "0x0000000000000000000000000000000000000000"):
+        tx = rentable.createLease(testNFT, tokenId, subscriptionDuration, {"from": subscriber, "value": value})
+
+    evt = tx.events['Rent']
+
+    assert evt['from'] == user
+    assert evt['to'] == subscriber
+    assert evt['tokenAddress'] == testNFT.address
+    assert evt['tokenId'] == tokenId
+
+    user2 = accounts[2]
+
+    wrentable.transferFrom(subscriber, user2, tokenId, {"from": subscriber})
+
+    lease = rentable.currentLeases(testNFT, tokenId).dict()
+    
+    assert testNFT.ownerOf(tokenId) == rentable.address
+    assert wrentable.ownerOf(tokenId) == user2
+
+    assert lease['from'] == user
+    assert lease['to'] == user2
+    assert lease['tokenAddress'] == testNFT.address
+    assert lease['tokenId'] == tokenId
+
+
+
+def test_transfer_ownership_during_lease(rentable, testNFT, paymentToken, weth, accounts, orentable):
+    user = accounts[0]
+    subscriber = accounts[1]
+
+    tokenId = 123
+
+    testNFT.mint(user, tokenId, {"from": user})
+
+    testNFT.approve(rentable, tokenId, {"from": user})
+
+    rentable.deposit(testNFT, tokenId, {"from": user})
+
+    maxTimeDuration = 1000  # blocks
+    pricePerBlock = 0.001 * (10 ** 18)
+
+    rentable.createOrUpdateLeaseConditions(
+        testNFT, tokenId, paymentToken, maxTimeDuration, pricePerBlock, {"from": user}
+    )
+
+    # Test subscribtion
+    subscriptionDuration = 400
+    value = "0.4 ether"
+
+    if (paymentToken == weth.address):
+        weth.deposit({"from": subscriber, "value": value})
+        weth.approve(rentable, value, {"from": subscriber})
+        tx = rentable.createLease(testNFT, tokenId, subscriptionDuration, {"from": subscriber})
+    elif (paymentToken == "0x0000000000000000000000000000000000000000"):
+        tx = rentable.createLease(testNFT, tokenId, subscriptionDuration, {"from": subscriber, "value": value})
+
+    evt = tx.events['Rent']
+
+    assert evt['from'] == user
+    assert evt['to'] == subscriber
+    assert evt['tokenAddress'] == testNFT.address
+    assert evt['tokenId'] == tokenId
+
+    user2 = accounts[2]
+
+    orentable.transferFrom(user, user2, tokenId, {"from": user})
+
+    lease = rentable.currentLeases(testNFT, tokenId).dict()
+    
+    assert testNFT.ownerOf(tokenId) == rentable.address
+    assert orentable.ownerOf(tokenId) == user2
+
+    assert lease['from'] == user2
+    assert lease['to'] == subscriber
+    assert lease['tokenAddress'] == testNFT.address
+    assert lease['tokenId'] == tokenId
