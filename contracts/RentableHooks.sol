@@ -35,11 +35,11 @@ contract RentableHooks {
     }
 
 
-    function _postList(address tokenAddress, uint256 tokenId, uint256 maxTimeDuration, uint256 pricePerBlock) internal {
+    function _postList(address tokenAddress, uint256 tokenId, address user, uint256 maxTimeDuration, uint256 pricePerBlock) internal {
         address lib = _libraries[tokenAddress];
         if (lib != address(0)){
             lib.functionDelegateCall(
-                abi.encodeCall(ICollectionLibrary(lib).postList, (tokenAddress, tokenId, maxTimeDuration, pricePerBlock)),
+                abi.encodeCall(ICollectionLibrary(lib).postList, (tokenAddress, tokenId, user, maxTimeDuration, pricePerBlock)),
                 ''
             );
         }

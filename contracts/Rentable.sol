@@ -199,7 +199,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
         lease.fixedFee = _fixedFee;
         lease.fee = _fee;
 
-        _postList(tokenAddress, tokenId, maxTimeDuration, pricePerBlock);
+        _postList(tokenAddress, tokenId, _msgSender(), maxTimeDuration, pricePerBlock);
 
         emit UpdateLeaseConditions(tokenAddress, tokenId, paymentTokenAddress, maxTimeDuration, pricePerBlock);
     }

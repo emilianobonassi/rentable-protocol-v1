@@ -12,7 +12,6 @@ def feeCollector(accounts):
 def weth(WETH9, deployer):
     yield WETH9.deploy({"from": deployer})
 
-
 @pytest.fixture
 def orentable(deployer, ORentable, testNFT):
     yield ORentable.deploy(testNFT, {"from": deployer})
@@ -22,11 +21,17 @@ def orentable(deployer, ORentable, testNFT):
 def yrentable(deployer, YRentable):
     yield YRentable.deploy({"from": deployer})
 
-
 @pytest.fixture
 def wrentable(deployer, WRentable, testNFT):
     yield WRentable.deploy(testNFT, {"from": deployer})
 
+@pytest.fixture
+def dummylib(deployer, DummyCollectionLibrary, eternalstorage):
+    yield DummyCollectionLibrary.deploy(eternalstorage, {"from": deployer})
+
+@pytest.fixture(scope="function", autouse=True)
+def eternalstorage(deployer, EternalStorage):
+    yield EternalStorage.deploy({"from": deployer})
 
 @pytest.fixture(
     params=[

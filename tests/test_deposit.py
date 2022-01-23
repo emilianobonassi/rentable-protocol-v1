@@ -4,11 +4,16 @@ import eth_abi
 from brownie import Wei
 
 
-def test_deposit(rentable, orentable, testNFT, accounts):
+def test_deposit(rentable, orentable, testNFT, accounts, dummylib, eternalstorage):
+    
+    rentable.setLibrary(testNFT, dummylib)
+
+    assert rentable.getLibrary(testNFT) == dummylib
+    
     user = accounts[0]
 
     tokenId = 123
-
+    
     testNFT.mint(user, tokenId, {"from": user})
 
     testNFT.approve(rentable, tokenId, {"from": user})
@@ -26,6 +31,13 @@ def test_deposit(rentable, orentable, testNFT, accounts):
 
     # Test user ownership
     assert orentable.ownerOf(tokenId) == user
+
+    assert eternalstorage.getAddressValue(dummylib.TOKEN_ADDRESS()) == testNFT.address
+    assert eternalstorage.getUIntValue(dummylib.TOKEN_ID()) == tokenId
+    assert eternalstorage.getAddressValue(dummylib.USER()) == user
+
+
+
 
 def test_deposit_1tx(rentable, orentable, testNFT, accounts):
     user = accounts[0]
