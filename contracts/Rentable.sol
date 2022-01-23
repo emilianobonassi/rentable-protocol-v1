@@ -204,6 +204,16 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
         emit UpdateLeaseConditions(tokenAddress, tokenId, paymentTokenAddress, maxTimeDuration, pricePerBlock);
     }
 
+    function _expireLease(uint256 leaseId) internal virtual {
+        Lease memory lease = _leases[leaseId];
+        require(block.number > lease.eta, "Current lease still pending");
+        if (WRentable(_wrentables[lease.tokenAddress]).exists(lease.tokenId)) {
+            WRentable(_wrentables[lease.tokenAddress]).burn(lease.tokenId);
+            _postExpireRent(leaseId, lease.tokenAddress, lease.tokenId, lease.from,  lease.to);
+            emit RentEnds(lease.from, lease.to, lease.tokenAddress, lease.tokenId, leaseId);
+        }
+    }
+
     function createOrUpdateLeaseConditions(address tokenAddress, uint256 tokenId, address paymentTokenAddress, uint256 maxTimeDuration, uint256 pricePerBlock)
         onlyOTokenOwner(tokenAddress, tokenId)
         external {
@@ -229,13 +239,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
         uint256 leaseId = _currentLeases[tokenAddress][tokenId];
 
         if (leaseId != 0) {
-            Lease memory currentLease = _leases[leaseId];
-            require(block.number > currentLease.eta, "Current lease still pending");
-            if (WRentable(_wrentables[tokenAddress]).exists(tokenId)) {
-                WRentable(_wrentables[tokenAddress]).burn(tokenId); 
-                _postExpireRent(leaseId, tokenAddress, currentLease.tokenId, currentLease.from,  currentLease.to);
-                emit RentEnds(currentLease.from, currentLease.to, tokenAddress, tokenId, leaseId);
-            }
+            _expireLease(leaseId);
         }
 
         require(duration <= leaseCondition.maxTimeDuration, "Duration greater than conditions");
@@ -303,12 +307,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
         if (block.number >= lease2redeem.eta) {
             amount2Redeem = lease2redeem.qtyToPullRemaining;
             fees2Redeem = lease2redeem.feesToPullRemaining;
-
-            if (WRentable(_wrentables[lease2redeem.tokenAddress]).exists(lease2redeem.tokenId)) {
-                WRentable(_wrentables[lease2redeem.tokenAddress]).burn(lease2redeem.tokenId);
-                 _postExpireRent(leaseId, lease2redeem.tokenAddress, lease2redeem.tokenId, lease2redeem.from,  lease2redeem.to);
-                emit RentEnds(lease2redeem.from, lease2redeem.to, lease2redeem.tokenAddress, lease2redeem.tokenId, leaseId);
-            }
+            _expireLease(leaseId);
         } else {
             amount2Redeem = lease2redeem.qtyToPullRemaining
             .mul(
@@ -357,6 +356,16 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
         }
 
         emit Claim(user, lease2redeem.tokenAddress, lease2redeem.tokenId, lease2redeem.paymentTokenAddress, amount2Redeem, leaseId);
+    }
+
+    function expireLease(uint256 leaseId) external {
+        _expireLease(leaseId);
+    }
+
+    function expireLeases(uint256[] calldata leaseIds) external {
+        for (uint256 i = 0; i < leaseIds.length; i++) {
+            _expireLease(leaseIds[i]);
+        }
     }
 
     function afterWTokenTransfer(address tokenAddress, address from, address to, uint256 tokenId) external {

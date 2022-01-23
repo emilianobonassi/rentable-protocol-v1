@@ -237,16 +237,25 @@ def test_subscribe_lease_via_depositAndList(rentable, testNFT, paymentToken, yre
 
     assert wrentable.ownerOf(tokenId) == subscriber.address
 
+    with brownie.reverts("Current lease still pending"):
+        rentable.expireLease(1)
+
     chain.mine(subscriptionDuration + 1)
 
     assert wrentable.ownerOf(tokenId) == "0x0000000000000000000000000000000000000000"
 
+    tx = rentable.expireLease(1)
+
+    evt = tx.events['RentEnds']
+
+    assert evt['from'] == user
+    assert evt['to'] == subscriber
+    assert evt['tokenAddress'] == testNFT.address
+    assert evt['tokenId'] == tokenId
+
 def test_redeem_lease(rentable, testNFT, paymentToken, weth, accounts, chain, feeCollector, dummylib, eternalstorage):
     rentable.setLibrary(testNFT, dummylib)
     assert rentable.getLibrary(testNFT) == dummylib
-
-    # check if storage is cleaned, TODO: REMOVE
-    assert eternalstorage.getAddressValue(dummylib.TOKEN_ADDRESS()) != testNFT.address
 
     user = accounts[0]
     subscriber = accounts[1]
