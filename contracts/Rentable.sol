@@ -67,6 +67,9 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
 
     constructor() {}
 
+    function getORentable(address wrapped_) external view returns (address) {
+        return address(_orentables[wrapped_]);
+    }
     function setORentable(address wrapped_, address oRentable_)
         external
         onlyOwner
@@ -79,6 +82,10 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
         onlyOwner
     {
         _yToken = yToken_;
+    }
+
+    function getWRentable(address wrapped_) external view returns (address) {
+        return address(_wrentables[wrapped_]);
     }
 
     function setWRentable(address wrapped_, address rentable_)
