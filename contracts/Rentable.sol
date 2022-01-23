@@ -12,8 +12,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./ORentable.sol";
 import "./YRentable.sol";
 import "./WRentable.sol";
+import "./RentableHooks.sol";
 
-contract Rentable is Ownable, IERC721Receiver {
+contract Rentable is Ownable, IERC721Receiver, RentableHooks {
 
     using Address for address;
     using SafeMath for uint256;
@@ -140,6 +141,8 @@ contract Rentable is Ownable, IERC721Receiver {
 
         oRentableId = oRentable.mint(to, tokenId);
 
+        _postDeposit(tokenAddress, tokenId, to);
+
         emit Deposit(to, tokenAddress, tokenId);
     }
 
@@ -196,6 +199,8 @@ contract Rentable is Ownable, IERC721Receiver {
         lease.fixedFee = _fixedFee;
         lease.fee = _fee;
 
+        _postList(tokenAddress, tokenId, maxTimeDuration, pricePerBlock);
+
         emit UpdateLeaseConditions(tokenAddress, tokenId, paymentTokenAddress, maxTimeDuration, pricePerBlock);
     }
 
@@ -228,6 +233,7 @@ contract Rentable is Ownable, IERC721Receiver {
             require(block.number > currentLease.eta, "Current lease still pending");
             if (WRentable(_wrentables[tokenAddress]).exists(tokenId)) {
                 WRentable(_wrentables[tokenAddress]).burn(tokenId); 
+                _postExpireRent(leaseId, tokenAddress, currentLease.tokenId, currentLease.from,  currentLease.to);
                 emit RentEnds(currentLease.from, currentLease.to, tokenAddress, tokenId, leaseId);
             }
         }
@@ -279,6 +285,7 @@ contract Rentable is Ownable, IERC721Receiver {
 
         WRentable(_wrentables[tokenAddress]).mint(user, tokenId);
         
+        _postCreateRent(leaseId, tokenAddress, tokenId, duration, from, user);
         emit Rent(from, user, tokenAddress, tokenId, leaseId);
     }
 
@@ -299,7 +306,7 @@ contract Rentable is Ownable, IERC721Receiver {
 
             if (WRentable(_wrentables[lease2redeem.tokenAddress]).exists(lease2redeem.tokenId)) {
                 WRentable(_wrentables[lease2redeem.tokenAddress]).burn(lease2redeem.tokenId);
-
+                 _postExpireRent(leaseId, lease2redeem.tokenAddress, lease2redeem.tokenId, lease2redeem.from,  lease2redeem.to);
                 emit RentEnds(lease2redeem.from, lease2redeem.to, lease2redeem.tokenAddress, lease2redeem.tokenId, leaseId);
             }
         } else {
@@ -360,6 +367,14 @@ contract Rentable is Ownable, IERC721Receiver {
             Lease storage currentLease = _leases[leaseId];
             currentLease.to = to;
         }
+
+        address lib = _libraries[tokenAddress];
+        if (lib != address(0)){
+            lib.functionDelegateCall(
+                abi.encodeCall(ICollectionLibrary(lib).postWTokenTransfer, (tokenAddress, tokenId, from, to)),
+                ''
+            );
+        }    
     }
 
 
@@ -373,6 +388,14 @@ contract Rentable is Ownable, IERC721Receiver {
             currentLease.from = to;
             rented = block.number > currentLease.eta;
         }
+
+        address lib = _libraries[tokenAddress];
+        if (lib != address(0)){
+            lib.functionDelegateCall(
+                abi.encodeCall(ICollectionLibrary(lib).postOTokenTransfer, (tokenAddress, tokenId, from, to, rented)),      
+                ''
+            );
+        }    
     }
 
 
