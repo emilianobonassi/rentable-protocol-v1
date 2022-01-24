@@ -9,14 +9,20 @@ import "./Rentable.sol";
 contract WRentable is ERC721ReadOnlyProxy {
     address internal _rentable;
 
+    string constant PREFIX = "w";
+
     modifier onlyRentable() {
         require(_msgSender() == _rentable, 'Only rentable');
         _;
     }   
 
     constructor(address wrapped_)
-        ERC721ReadOnlyProxy(wrapped_ , "w")
+        ERC721ReadOnlyProxy(wrapped_ , PREFIX)
     {}
+
+    function init(address wrapped, address owner) external virtual {
+        _init(wrapped, PREFIX, owner);
+    }
 
     function setRentable(address rentable_)
         external

@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.11;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin-upgradable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradable/contracts/token/ERC721/ERC721Upgradeable.sol";
 
-contract ERC721ReadOnlyProxy is Ownable, ERC721Enumerable {
+contract ERC721ReadOnlyProxy is OwnableUpgradeable, ERC721Upgradeable {
     address internal _wrapped;
 
     address internal _minter;
@@ -15,9 +15,15 @@ contract ERC721ReadOnlyProxy is Ownable, ERC721Enumerable {
         _;
     }
 
-    constructor(address wrapped, string memory prefix) 
-        ERC721(string(abi.encodePacked(prefix, ERC721(wrapped).name())), string(abi.encodePacked(prefix, ERC721(wrapped).symbol())))
-    {
+    constructor(address wrapped, string memory prefix) {
+        _init(wrapped, prefix, _msgSender());
+    }
+
+    function _init(address wrapped, string memory prefix, address owner) internal initializer {
+        __ERC721_init(string(abi.encodePacked(prefix, ERC721Upgradeable(wrapped).name())), string(abi.encodePacked(prefix, ERC721Upgradeable(wrapped).symbol())));
+        __Context_init_unchained();
+        _transferOwnership(owner);
+
         _wrapped = wrapped;
     }
 
@@ -29,7 +35,7 @@ contract ERC721ReadOnlyProxy is Ownable, ERC721Enumerable {
      * @dev See {IERC721Metadata-tokenURI}.
      */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        return IERC721Metadata(_wrapped).tokenURI(tokenId);
+        return IERC721MetadataUpgradeable(_wrapped).tokenURI(tokenId);
     }
 
     function getMinter()

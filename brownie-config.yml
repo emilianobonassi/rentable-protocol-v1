@@ -9,12 +9,14 @@ autofetch_sources: True
 # require OpenZepplin Contracts
 dependencies:
   - OpenZeppelin/openzeppelin-contracts@4.4.2
+  - OpenZeppelin/openzeppelin-contracts-upgradeable@4.4.2
 
 # path remapping to support imports from GitHub/NPM
 compiler:
   solc:
     remappings:
       - "@openzeppelin=OpenZeppelin/openzeppelin-contracts@4.4.2"
+      - "@openzeppelin-upgradable=OpenZeppelin/openzeppelin-contracts-upgradeable@4.4.2"
 
 reports:
   exclude_contracts:

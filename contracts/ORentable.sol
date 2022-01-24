@@ -8,9 +8,15 @@ import "./Rentable.sol";
 contract ORentable is ERC721ReadOnlyProxy {
     address internal _rentable;
 
+    string constant PREFIX = "o";
+
     constructor(address wrapped_)
-        ERC721ReadOnlyProxy(wrapped_ , "o")
+        ERC721ReadOnlyProxy(wrapped_, PREFIX)
     {}
+
+    function init(address wrapped, address owner) external virtual {
+        _init(wrapped, PREFIX, owner);
+    }
 
     function setRentable(address rentable_)
         external

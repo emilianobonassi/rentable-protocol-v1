@@ -40,6 +40,10 @@ def testLand(deployer, TestLand):
 def decentralandCollectionLibrary(deployer, DecentralandCollectionLibrary):
     yield DecentralandCollectionLibrary.deploy({"from": deployer})
 
+@pytest.fixture
+def proxyFactoryInitializable(deployer, ProxyFactoryInitializable):
+    yield ProxyFactoryInitializable.deploy({"from": deployer})
+
 @pytest.fixture(
     params=[
         ["0 ether", 0],
@@ -54,7 +58,7 @@ def decentralandCollectionLibrary(deployer, DecentralandCollectionLibrary):
         'fixed-fee-fee'
     ]
 )
-def rentable(deployer, Rentable, ORentable, WRentable, orentable, yrentable, wrentable, testNFT, feeCollector, testLand, decentralandCollectionLibrary, request):
+def rentable(deployer, Rentable, ORentable, WRentable, orentable, yrentable, wrentable, testNFT, feeCollector, testLand, decentralandCollectionLibrary, proxyFactoryInitializable, request):
     n = Rentable.deploy({"from": deployer})
 
     n.setYToken(yrentable)
@@ -67,13 +71,21 @@ def rentable(deployer, Rentable, ORentable, WRentable, orentable, yrentable, wre
     n.setWRentable(testNFT, wrentable)
 
     # Decentraland init
+    data = orentable.init.encode_input(testLand, deployer)
+    tx = proxyFactoryInitializable.deployMinimal(orentable, data, {"from": deployer})
+    od = ORentable.at((tx.events["ProxyCreated"]["proxy"]), deployer)
     od = ORentable.deploy(testLand, {"from": deployer})
     od.setRentable(n)
     n.setORentable(testLand, od)
+
+    data = wrentable.init.encode_input(testLand, deployer)
+    tx = proxyFactoryInitializable.deployMinimal(wrentable, data, {"from": deployer})
+    od = WRentable.at((tx.events["ProxyCreated"]["proxy"]), deployer)
     wd = WRentable.deploy(testLand, {"from": deployer})
     wd.setRentable(n)
     n.setWRentable(testLand, wd)
     n.setLibrary(testLand, decentralandCollectionLibrary)
+
 
     n.setFixedFee(request.param[0])
     n.setFee(request.param[1])
