@@ -212,7 +212,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
     }
 
     function _isExpired(Lease memory lease) internal virtual returns (bool) {
-        return block.number > lease.eta;
+        return block.number >= lease.eta;
     }
     function _expireLease(uint256 leaseId) internal virtual {
         Lease memory lease = _leases[leaseId];
@@ -314,7 +314,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
 
         uint256 amount2Redeem = 0;
         uint256 fees2Redeem = 0;
-        if (block.number >= lease2redeem.eta) {
+        if (_isExpired(lease2redeem)) {
             amount2Redeem = lease2redeem.qtyToPullRemaining;
             fees2Redeem = lease2redeem.feesToPullRemaining;
             _expireLease(leaseId);
