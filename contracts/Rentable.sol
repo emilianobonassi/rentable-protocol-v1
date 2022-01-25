@@ -52,6 +52,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
     mapping (address => address) internal _wrentables;
     mapping (address => ORentable) internal _orentables;
 
+    mapping (address => bool) public paymentTokenAllowlist;
 
     uint256 constant public BASE_FEE = 10000;
     uint256 internal _fixedFee;
@@ -118,6 +119,14 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
 
     function setFeeCollector(address payable feeCollector) external onlyOwner {
         _feeCollector = feeCollector;
+    }
+
+    function enablePaymentToken(address paymentTokenAddress) external onlyOwner {
+        paymentTokenAllowlist[paymentTokenAddress] = true;
+    }
+
+    function disablePaymentToken(address paymentTokenAddress) external onlyOwner {
+        paymentTokenAllowlist[paymentTokenAddress] = false;
     }
 
     function _getExistingORentable(address tokenAddress) internal virtual view returns (ORentable oRentable) {
@@ -200,6 +209,8 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
     }
 
     function _createOrUpdateLeaseConditions(address tokenAddress, uint256 tokenId, address paymentTokenAddress, uint256 maxTimeDuration, uint256 pricePerBlock) internal {
+        require(paymentTokenAllowlist[paymentTokenAddress], 'Not supported payment token');
+
         LeaseConditions storage lease = _leasesConditions[tokenAddress][tokenId];
 
         lease.maxTimeDuration = maxTimeDuration;

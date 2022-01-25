@@ -58,7 +58,7 @@ def proxyFactoryInitializable(deployer, ProxyFactoryInitializable):
         'fixed-fee-fee'
     ]
 )
-def rentable(deployer, Rentable, ORentable, WRentable, orentable, yrentable, wrentable, testNFT, feeCollector, testLand, decentralandCollectionLibrary, proxyFactoryInitializable, request):
+def rentable(deployer, Rentable, ORentable, WRentable, orentable, yrentable, wrentable, testNFT, feeCollector, weth, testLand, decentralandCollectionLibrary, proxyFactoryInitializable, request):
     n = Rentable.deploy({"from": deployer})
 
     n.setYToken(yrentable)
@@ -69,6 +69,9 @@ def rentable(deployer, Rentable, ORentable, WRentable, orentable, yrentable, wre
 
     wrentable.setRentable(n)
     n.setWRentable(testNFT, wrentable)
+
+    n.enablePaymentToken('0x0000000000000000000000000000000000000000')
+    n.enablePaymentToken(weth.address)
 
     # Decentraland init
     data = orentable.init.encode_input(testLand, deployer)
