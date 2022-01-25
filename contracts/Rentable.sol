@@ -9,12 +9,13 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./ORentable.sol";
 import "./YRentable.sol";
 import "./WRentable.sol";
 import "./RentableHooks.sol";
 
-contract Rentable is Ownable, IERC721Receiver, RentableHooks {
+contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
 
     using Address for address;
     using SafeMath for uint256;
@@ -161,16 +162,17 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
 
     function deposit(address tokenAddress, uint256 tokenId)
         external
+        nonReentrant
         returns (uint256) {
         return _deposit(tokenAddress, tokenId, _msgSender(), false);
     }
 
-    function depositAndList(address tokenAddress, uint256 tokenId, address paymentTokenAddress, uint256 maxTimeDuration, uint256 pricePerBlock) external returns (uint256) {
+    function depositAndList(address tokenAddress, uint256 tokenId, address paymentTokenAddress, uint256 maxTimeDuration, uint256 pricePerBlock) external nonReentrant returns (uint256) {
         return _depositAndList(tokenAddress, tokenId, _msgSender(), false, paymentTokenAddress, maxTimeDuration, pricePerBlock);
     }
 
     function withdraw(address tokenAddress, uint256 tokenId)
-        external {
+        external nonReentrant {
         address user = _msgSender();
         ORentable oRentable = _getExistingORentableCheckOwnership(tokenAddress, tokenId, user);
 
@@ -237,6 +239,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
     function createLease(address tokenAddress, uint256 tokenId, uint256 duration)
         external
         payable
+        nonReentrant
     {
         ORentable oRentable = _getExistingORentable(tokenAddress);
         address from = oRentable.ownerOf(tokenId);
@@ -260,26 +263,6 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
         uint256 feesToPullRemaining = qtyToPullRemaining.mul(leaseCondition.fee).div(BASE_FEE);
         qtyToPullRemaining = qtyToPullRemaining.sub(feesToPullRemaining);
 
-        if(leaseCondition.paymentTokenAddress == address(0)) {
-            require(msg.value >= paymentQty, "Not enough funds");
-            if (msg.value > paymentQty) {
-                payable(user).transfer(msg.value.sub(paymentQty));
-            }
-            
-            if(leaseCondition.fixedFee > 0) {
-                _feeCollector.transfer(leaseCondition.fixedFee);
-            }
-        } else {
-            IERC20(leaseCondition.paymentTokenAddress).safeTransferFrom(user, address(this), paymentQty);
-            if (msg.value > 0) {
-                payable(user).transfer(msg.value);
-            }
-
-            if(leaseCondition.fixedFee > 0) {
-                IERC20(leaseCondition.paymentTokenAddress).safeTransfer(_feeCollector, leaseCondition.fixedFee);
-            }
-        }
-        
         leaseId = YRentable(_yToken).mint(from);
 
         Lease storage lease = _leases[leaseId];
@@ -297,11 +280,32 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
 
         WRentable(_wrentables[tokenAddress]).mint(user, tokenId);
         
+        if(leaseCondition.paymentTokenAddress == address(0)) {
+            require(msg.value >= paymentQty, "Not enough funds");
+            if (msg.value > paymentQty) {
+                Address.sendValue(payable(user), msg.value.sub(paymentQty));
+            }
+
+            if(leaseCondition.fixedFee > 0) {
+                Address.sendValue(_feeCollector, leaseCondition.fixedFee);
+            }
+        } else {
+            IERC20(leaseCondition.paymentTokenAddress).safeTransferFrom(user, address(this), paymentQty);
+            if (msg.value > 0) {
+                Address.sendValue(payable(user), msg.value);
+            }
+
+            if(leaseCondition.fixedFee > 0) {
+                IERC20(leaseCondition.paymentTokenAddress).safeTransfer(_feeCollector, leaseCondition.fixedFee);
+            }
+        }
+
         _postCreateRent(leaseId, tokenAddress, tokenId, duration, from, user);
+
         emit Rent(from, user, tokenAddress, tokenId, leaseId);
     }
 
-    function redeemLease(uint256 leaseId) external {
+    function redeemLease(uint256 leaseId) external nonReentrant {
         address user = _msgSender();
         require(IERC721(_yToken).ownerOf(leaseId) == user, 'You should own respective yRentable');
         
@@ -352,9 +356,9 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
         lease2redeem.lastUpdated = block.number;
 
         if (lease2redeem.paymentTokenAddress == address(0)) {
-            payable(user).transfer(amount2Redeem);
+            Address.sendValue(payable(user), amount2Redeem);
             if (fees2Redeem > 0) {
-                payable(_feeCollector).transfer(fees2Redeem);
+                Address.sendValue(_feeCollector, fees2Redeem);
             }
         } else {
             IERC20(lease2redeem.paymentTokenAddress).safeTransfer(user, amount2Redeem);
@@ -377,7 +381,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
     }
 
     function afterWTokenTransfer(address tokenAddress, address from, address to, uint256 tokenId) external {
-        require(msg.sender == _wrentables[tokenAddress], "Only proper WRentables allowed");
+        require(_msgSender() == _wrentables[tokenAddress], "Only proper WRentables allowed");
 
         uint256 leaseId = _currentLeases[tokenAddress][tokenId];
         if (leaseId != 0) { 
@@ -396,7 +400,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
 
 
     function afterOTokenTransfer(address tokenAddress, address from, address to, uint256 tokenId) external {
-        require(msg.sender == address(_orentables[tokenAddress]), "Only proper ORentables allowed");
+        require(_msgSender() == address(_orentables[tokenAddress]), "Only proper ORentables allowed");
 
         uint256 leaseId = _currentLeases[tokenAddress][tokenId];
         bool rented = false;
@@ -421,7 +425,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks {
         address from,
         uint256 tokenId,
         bytes calldata data
-    ) public virtual override returns (bytes4) {
+    ) public virtual override nonReentrant returns (bytes4) {
 
         if (data.length == 0) {
             _deposit(_msgSender(), tokenId, from, true);
