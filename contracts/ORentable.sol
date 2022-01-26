@@ -25,7 +25,10 @@ contract ORentable is ERC721ReadOnlyProxy {
         _rentable = rentable_;
         _minter = rentable_;
     }
-    
+
+    function getRentable() external view returns (address) {
+        return _rentable;
+    }
 
     function _transfer(address from, address to, uint256 tokenId) override internal virtual {
         super._transfer(from, to, tokenId);

@@ -32,6 +32,10 @@ contract WRentable is ERC721ReadOnlyProxy {
         _minter = rentable_;
     }
 
+    function getRentable() external view returns (address) {
+        return _rentable;
+    }
+
     //TODO: balanceOf
 
     /**

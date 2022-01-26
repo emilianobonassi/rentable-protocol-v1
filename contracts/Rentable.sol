@@ -87,6 +87,10 @@ contract Rentable is Security4, IERC721Receiver, RentableHooks, ReentrancyGuard 
         _yToken = yToken_;
     }
 
+    function getYToken() external view returns (address) {
+        return _yToken;
+    }
+
     function getWRentable(address wrapped_) external view returns (address) {
         return address(_wrentables[wrapped_]);
     }

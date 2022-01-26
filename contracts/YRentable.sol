@@ -27,6 +27,10 @@ contract YRentable is ERC721, Ownable {
         _minter = minter_;
     }
 
+    function getMinter() external view returns (address) {
+        return _minter;
+    }
+
     function mint(address to)
         external
         onlyMinter
