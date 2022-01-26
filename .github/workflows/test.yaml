@@ -4,11 +4,11 @@ on:
   push:
     branches:
     - main
-    - develop
+    - dev
   pull_request:
     branches:
     - main
-    - develop
+    - dev
 
 env:
   ETHERSCAN_TOKEN:  ${{ secrets.ETHERSCAN_TOKEN }}
