@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.11;
 
@@ -13,13 +13,15 @@ contract TestNFT is ERC721URIStorage {
 
     constructor() ERC721("TestNFT", "TNFT") {}
 
-    function mint(address to, uint256 tokenId)
-        external {
+    function mint(address to, uint256 tokenId) external {
         _mint(to, tokenId);
     }
 
-    function mint(address to, uint256 tokenId, string memory _tokenURI)
-        external {
+    function mint(
+        address to,
+        uint256 tokenId,
+        string memory _tokenURI
+    ) external {
         _mint(to, tokenId);
         _setTokenURI(tokenId, _tokenURI);
     }

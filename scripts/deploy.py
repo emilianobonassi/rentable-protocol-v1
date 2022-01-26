@@ -1,18 +1,27 @@
-
 import click
 
-from brownie import accounts, Rentable, ORentable, YRentable, WRentable, EmergencyImplementation, ProxyFactoryInitializable, history
+from brownie import (
+    accounts,
+    Rentable,
+    ORentable,
+    YRentable,
+    WRentable,
+    EmergencyImplementation,
+    ProxyFactoryInitializable,
+    history,
+)
+
 
 def main():
-    dev = accounts.load('dev')
-    governance = '0xC08618375bb20ac1C4BB806Baa027a4362156fE6'
-    operator = '0x49941c694693371894d6DCc1AbDbC91A7395b703'
-    feeCollector = '0xa55D576DE85dA4295aBc1E2BEa5d5c77Fe189205'
+    dev = accounts.load("dev")
+    governance = "0xC08618375bb20ac1C4BB806Baa027a4362156fE6"
+    operator = "0x49941c694693371894d6DCc1AbDbC91A7395b703"
+    feeCollector = "0xa55D576DE85dA4295aBc1E2BEa5d5c77Fe189205"
 
     click.echo(f"You are using: 'dev' [{dev.address}]")
 
-    meebits = '0x7Bd29408f11D2bFC23c34f18275bBf23bB716Bc7'
-    eth = '0x0000000000000000000000000000000000000000'
+    meebits = "0x7Bd29408f11D2bFC23c34f18275bBf23bB716Bc7"
+    eth = "0x0000000000000000000000000000000000000000"
 
     proxyFactoryInitializable = ProxyFactoryInitializable.deploy({"from": dev})
 

@@ -2,27 +2,35 @@
 pragma solidity ^0.8.11;
 
 contract ProxyFactoryInitializable {
-  
     event ProxyCreated(address indexed proxy, bytes returnData);
 
-    function deployMinimal(address _logic, bytes memory _data) external returns (address proxy, bytes memory returnData) {
+    function deployMinimal(address _logic, bytes memory _data)
+        external
+        returns (address proxy, bytes memory returnData)
+    {
         // Adapted from https://github.com/optionality/clone-factory/blob/32782f82dfc5a00d103a7e61a17a5dedbd1e8e9d/contracts/CloneFactory.sol
         bytes20 targetBytes = bytes20(_logic);
         assembly {
-        let clone := mload(0x40)
-        mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
-        mstore(add(clone, 0x14), targetBytes)
-        mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
-        proxy := create(0, clone, 0x37)
+            let clone := mload(0x40)
+            mstore(
+                clone,
+                0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000
+            )
+            mstore(add(clone, 0x14), targetBytes)
+            mstore(
+                add(clone, 0x28),
+                0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000
+            )
+            proxy := create(0, clone, 0x37)
         }
-        
-        if(_data.length > 0) {
-        bool success = false;
-        (success, returnData) = proxy.call(_data);
-        if (!success) {
-            string memory _revertMsg = _getRevertMsg(returnData);
-            revert(_revertMsg);
-        }
+
+        if (_data.length > 0) {
+            bool success = false;
+            (success, returnData) = proxy.call(_data);
+            if (!success) {
+                string memory _revertMsg = _getRevertMsg(returnData);
+                revert(_revertMsg);
+            }
         }
 
         emit ProxyCreated(address(proxy), returnData);
@@ -32,9 +40,13 @@ contract ProxyFactoryInitializable {
     /// @notice This is needed in order to get the human-readable revert message from a call
     /// @param _res Response of the call
     /// @return Revert message string
-    function _getRevertMsg(bytes memory _res) internal pure returns (string memory) {
+    function _getRevertMsg(bytes memory _res)
+        internal
+        pure
+        returns (string memory)
+    {
         // If the _res length is less than 68, then the transaction failed silently (without a revert message)
-        if (_res.length < 68) return 'Transaction reverted silently';
+        if (_res.length < 68) return "Transaction reverted silently";
         bytes memory revertData = slice(_res, 4, _res.length - 4); // Remove the selector which is the first 4 bytes
         return abi.decode(revertData, (string)); // All that remains is the revert string
     }
@@ -43,11 +55,7 @@ contract ProxyFactoryInitializable {
         bytes memory _bytes,
         uint256 _start,
         uint256 _length
-    )
-        internal
-        pure
-        returns (bytes memory)
-    {
+    ) internal pure returns (bytes memory) {
         require(_length + 31 >= _length, "slice_overflow");
         require(_start + _length >= _start, "slice_overflow");
         require(_bytes.length >= _start + _length, "slice_outOfBounds");
@@ -75,13 +83,22 @@ contract ProxyFactoryInitializable {
                 // because when slicing multiples of 32 bytes (lengthmod == 0)
                 // the following copy loop was copying the origin's length
                 // and then ending prematurely not copying everything it should.
-                let mc := add(add(tempBytes, lengthmod), mul(0x20, iszero(lengthmod)))
+                let mc := add(
+                    add(tempBytes, lengthmod),
+                    mul(0x20, iszero(lengthmod))
+                )
                 let end := add(mc, _length)
 
                 for {
                     // The multiplication in the next line has the same exact purpose
                     // as the one above.
-                    let cc := add(add(add(_bytes, lengthmod), mul(0x20, iszero(lengthmod))), _start)
+                    let cc := add(
+                        add(
+                            add(_bytes, lengthmod),
+                            mul(0x20, iszero(lengthmod))
+                        ),
+                        _start
+                    )
                 } lt(mc, end) {
                     mc := add(mc, 0x20)
                     cc := add(cc, 0x20)

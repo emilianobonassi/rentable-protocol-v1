@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.11;
 
@@ -16,14 +16,11 @@ contract YRentable is ERC721, Ownable {
     constructor() ERC721("YRentable", "YRENTABLE") {}
 
     modifier onlyMinter() {
-        require(_msgSender() == _minter, 'Only minter');
+        require(_msgSender() == _minter, "Only minter");
         _;
     }
 
-    function setMinter(address minter_)
-        external
-        onlyOwner
-    {
+    function setMinter(address minter_) external onlyOwner {
         _minter = minter_;
     }
 
@@ -31,11 +28,7 @@ contract YRentable is ERC721, Ownable {
         return _minter;
     }
 
-    function mint(address to)
-        external
-        onlyMinter
-        returns (uint256)
-    {
+    function mint(address to) external onlyMinter returns (uint256) {
         _tokenIds.increment();
 
         uint256 newTokenId = _tokenIds.current();

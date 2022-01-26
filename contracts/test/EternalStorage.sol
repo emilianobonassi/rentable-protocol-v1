@@ -1,24 +1,23 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.11;
 
-
 contract EternalStorage {
     /* ========== DATA TYPES ========== */
-    mapping(bytes32 => uint) internal UIntStorage;
+    mapping(bytes32 => uint256) internal UIntStorage;
     mapping(bytes32 => string) internal StringStorage;
     mapping(bytes32 => address) internal AddressStorage;
     mapping(bytes32 => bytes) internal BytesStorage;
     mapping(bytes32 => bytes32) internal Bytes32Storage;
     mapping(bytes32 => bool) internal BooleanStorage;
-    mapping(bytes32 => int) internal IntStorage;
+    mapping(bytes32 => int256) internal IntStorage;
 
     // UIntStorage;
-    function getUIntValue(bytes32 record) external view returns (uint) {
+    function getUIntValue(bytes32 record) external view returns (uint256) {
         return UIntStorage[record];
     }
 
-    function setUIntValue(bytes32 record, uint value) external {
+    function setUIntValue(bytes32 record, uint256 value) external {
         UIntStorage[record] = value;
     }
 
@@ -27,7 +26,11 @@ contract EternalStorage {
     }
 
     // StringStorage
-    function getStringValue(bytes32 record) external view returns (string memory) {
+    function getStringValue(bytes32 record)
+        external
+        view
+        returns (string memory)
+    {
         return StringStorage[record];
     }
 
@@ -53,7 +56,11 @@ contract EternalStorage {
     }
 
     // BytesStorage
-    function getBytesValue(bytes32 record) external view returns (bytes memory) {
+    function getBytesValue(bytes32 record)
+        external
+        view
+        returns (bytes memory)
+    {
         return BytesStorage[record];
     }
 
@@ -92,16 +99,15 @@ contract EternalStorage {
     }
 
     // IntStorage
-    function getIntValue(bytes32 record) external view returns (int) {
+    function getIntValue(bytes32 record) external view returns (int256) {
         return IntStorage[record];
     }
 
-    function setIntValue(bytes32 record, int value) external {
+    function setIntValue(bytes32 record, int256 value) external {
         IntStorage[record] = value;
     }
 
     function deleteIntValue(bytes32 record) external {
         delete IntStorage[record];
     }
-
 }

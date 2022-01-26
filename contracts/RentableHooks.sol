@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.11;
 
@@ -6,67 +6,96 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "./collectionlibs/ICollectionLibrary.sol";
 
 contract RentableHooks {
-
     using Address for address;
 
-    mapping (address => address) internal _libraries;
+    mapping(address => address) internal _libraries;
 
-    function getLibrary(address wrapped_) view
-    external returns (address)
-    {
-       return  _libraries[wrapped_];
+    function getLibrary(address wrapped_) external view returns (address) {
+        return _libraries[wrapped_];
     }
 
-    function setLibrary(address wrapped_, address library_)
-    external
-    {
+    function setLibrary(address wrapped_, address library_) external {
         _libraries[wrapped_] = library_;
     }
 
-
-    function _postDeposit(address tokenAddress, uint256 tokenId, address user) internal {
+    function _postDeposit(
+        address tokenAddress,
+        uint256 tokenId,
+        address user
+    ) internal {
         address lib = _libraries[tokenAddress];
-        if (lib != address(0)){
+        if (lib != address(0)) {
             lib.functionDelegateCall(
-                abi.encodeCall(ICollectionLibrary(lib).postDeposit, (tokenAddress, tokenId, user)),
-                ''
-            );              
-        }
-    }
-
-
-    function _postList(address tokenAddress, uint256 tokenId, address user, uint256 maxTimeDuration, uint256 pricePerBlock) internal {
-        address lib = _libraries[tokenAddress];
-        if (lib != address(0)){
-            lib.functionDelegateCall(
-                abi.encodeCall(ICollectionLibrary(lib).postList, (tokenAddress, tokenId, user, maxTimeDuration, pricePerBlock)),
-                ''
+                abi.encodeCall(
+                    ICollectionLibrary(lib).postDeposit,
+                    (tokenAddress, tokenId, user)
+                ),
+                ""
             );
         }
     }
 
-    function _postCreateRent(uint256 leaseId, address tokenAddress, uint256 tokenId, uint256 duration, address from, address to) internal {
+    function _postList(
+        address tokenAddress,
+        uint256 tokenId,
+        address user,
+        uint256 maxTimeDuration,
+        uint256 pricePerBlock
+    ) internal {
         address lib = _libraries[tokenAddress];
-        if (lib != address(0)){
+        if (lib != address(0)) {
             lib.functionDelegateCall(
-                abi.encodeCall(ICollectionLibrary(lib).postCreateRent, (leaseId, tokenAddress, tokenId, duration, from, to)),   
-                ''
+                abi.encodeCall(
+                    ICollectionLibrary(lib).postList,
+                    (
+                        tokenAddress,
+                        tokenId,
+                        user,
+                        maxTimeDuration,
+                        pricePerBlock
+                    )
+                ),
+                ""
             );
         }
     }
 
-    function _postExpireRent(uint256 leaseId, address tokenAddress, uint256 tokenId, address from, address to) internal {
+    function _postCreateRent(
+        uint256 leaseId,
+        address tokenAddress,
+        uint256 tokenId,
+        uint256 duration,
+        address from,
+        address to
+    ) internal {
         address lib = _libraries[tokenAddress];
-        if (lib != address(0)){
+        if (lib != address(0)) {
             lib.functionDelegateCall(
-                abi.encodeCall(ICollectionLibrary(lib).postExpireRent, (leaseId, tokenAddress, tokenId, from, to)),      
-                ''
+                abi.encodeCall(
+                    ICollectionLibrary(lib).postCreateRent,
+                    (leaseId, tokenAddress, tokenId, duration, from, to)
+                ),
+                ""
             );
-        }    
+        }
+    }
+
+    function _postExpireRent(
+        uint256 leaseId,
+        address tokenAddress,
+        uint256 tokenId,
+        address from,
+        address to
+    ) internal {
+        address lib = _libraries[tokenAddress];
+        if (lib != address(0)) {
+            lib.functionDelegateCall(
+                abi.encodeCall(
+                    ICollectionLibrary(lib).postExpireRent,
+                    (leaseId, tokenAddress, tokenId, from, to)
+                ),
+                ""
+            );
+        }
     }
 }
-      
-
-
-    
-
