@@ -691,7 +691,7 @@ contract Rentable is
         returns (bytes4)
     {
         require(
-            !allowlistEnabled || _isAllowlisted(msg.sender),
+            !allowlistEnabled || _isAllowlisted(operator),
             "User not allowed"
         );
 

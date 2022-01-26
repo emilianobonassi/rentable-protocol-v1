@@ -38,6 +38,8 @@ def main():
 
     assert r.emergencyImplementation() == emergencyImplementation.address
 
+    r.enableAllowlist()
+
     r.enablePaymentToken(eth)
     assert r.paymentTokenAllowlist(eth) == True
     r.setFeeCollector(feeCollector)
