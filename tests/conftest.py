@@ -9,6 +9,14 @@ def feeCollector(accounts):
     yield accounts[4]
 
 @pytest.fixture
+def governance(accounts):
+    yield accounts[6]
+
+@pytest.fixture
+def operator(accounts):
+    yield accounts[7]
+
+@pytest.fixture
 def weth(WETH9, deployer):
     yield WETH9.deploy({"from": deployer})
 
@@ -23,6 +31,10 @@ def yrentable(deployer, YRentable):
 @pytest.fixture
 def wrentable(deployer, WRentable, testNFT):
     yield WRentable.deploy(testNFT, {"from": deployer})
+
+@pytest.fixture
+def emergencyImplementation(deployer, EmergencyImplementation):
+    yield EmergencyImplementation.deploy({"from": deployer})
 
 @pytest.fixture
 def dummylib(deployer, DummyCollectionLibrary, eternalstorage):
@@ -58,8 +70,8 @@ def proxyFactoryInitializable(deployer, ProxyFactoryInitializable):
         'fixed-fee-fee'
     ]
 )
-def rentable(deployer, Rentable, ORentable, WRentable, orentable, yrentable, wrentable, testNFT, feeCollector, weth, testLand, decentralandCollectionLibrary, proxyFactoryInitializable, request):
-    n = Rentable.deploy({"from": deployer})
+def rentable(deployer, governance, operator, emergencyImplementation, Rentable, ORentable, WRentable, orentable, yrentable, wrentable, testNFT, feeCollector, weth, testLand, decentralandCollectionLibrary, proxyFactoryInitializable, request):
+    n = Rentable.deploy(governance, operator, emergencyImplementation, {"from": governance})
 
     n.setYToken(yrentable)
     yrentable.setMinter(n)

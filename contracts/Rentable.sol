@@ -10,12 +10,13 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@emilianobonassi-security/contracts/Security4.sol";
 import "./ORentable.sol";
 import "./YRentable.sol";
 import "./WRentable.sol";
 import "./RentableHooks.sol";
 
-contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
+contract Rentable is Security4, IERC721Receiver, RentableHooks, ReentrancyGuard {
 
     using Address for address;
     using SafeMath for uint256;
@@ -67,21 +68,21 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
     event Claim(address indexed who, address indexed tokenAddress, uint256 indexed tokenId, address paymentTokenAddress, uint256 qty, uint256 yTokenId);
     event RentEnds(address from, address indexed to, address indexed tokenAddress, uint256 indexed tokenId, uint256 yTokenId);
 
-    constructor() {}
+    constructor(address _governance, address _operator, address payable _emergencyImplementation) Security4(_governance, _operator, _emergencyImplementation) {}
 
     function getORentable(address wrapped_) external view returns (address) {
         return address(_orentables[wrapped_]);
     }
     function setORentable(address wrapped_, address oRentable_)
         external
-        onlyOwner
+        onlyGovernance
     {
         _orentables[wrapped_] = ORentable(oRentable_);
     }
 
     function setYToken(address yToken_)
         external
-        onlyOwner
+        onlyGovernance
     {
         _yToken = yToken_;
     }
@@ -92,7 +93,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
 
     function setWRentable(address wrapped_, address rentable_)
         external
-        onlyOwner
+        onlyGovernance
     {
         _wrentables[wrapped_] = rentable_;
     }
@@ -101,7 +102,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
         return _fixedFee;
     }
 
-    function setFixedFee(uint256 fixedFee) external onlyOwner {
+    function setFixedFee(uint256 fixedFee) external onlyGovernance {
         _fixedFee = fixedFee;
     }
 
@@ -109,7 +110,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
         return _fee;
     }
 
-    function setFee(uint256 fee) external onlyOwner {
+    function setFee(uint256 fee) external onlyGovernance {
         _fee = fee;
     }
 
@@ -117,15 +118,15 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
         return _feeCollector;
     }
 
-    function setFeeCollector(address payable feeCollector) external onlyOwner {
+    function setFeeCollector(address payable feeCollector) external onlyGovernance {
         _feeCollector = feeCollector;
     }
 
-    function enablePaymentToken(address paymentTokenAddress) external onlyOwner {
+    function enablePaymentToken(address paymentTokenAddress) external onlyGovernance {
         paymentTokenAllowlist[paymentTokenAddress] = true;
     }
 
-    function disablePaymentToken(address paymentTokenAddress) external onlyOwner {
+    function disablePaymentToken(address paymentTokenAddress) external onlyGovernance {
         paymentTokenAllowlist[paymentTokenAddress] = false;
     }
 
@@ -172,16 +173,23 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
     function deposit(address tokenAddress, uint256 tokenId)
         external
         nonReentrant
+        whenPausedthenProxy
+        onlyAllowlisted
         returns (uint256) {
         return _deposit(tokenAddress, tokenId, _msgSender(), false);
     }
 
-    function depositAndList(address tokenAddress, uint256 tokenId, address paymentTokenAddress, uint256 maxTimeDuration, uint256 pricePerBlock) external nonReentrant returns (uint256) {
+    function depositAndList(address tokenAddress, uint256 tokenId, address paymentTokenAddress, uint256 maxTimeDuration, uint256 pricePerBlock) external nonReentrant whenPausedthenProxy
+        onlyAllowlisted returns (uint256) {
         return _depositAndList(tokenAddress, tokenId, _msgSender(), false, paymentTokenAddress, maxTimeDuration, pricePerBlock);
     }
 
     function withdraw(address tokenAddress, uint256 tokenId)
-        external nonReentrant {
+        external
+        nonReentrant
+        whenPausedthenProxy
+        onlyAllowlisted
+    {
         address user = _msgSender();
         ORentable oRentable = _getExistingORentableCheckOwnership(tokenAddress, tokenId, user);
 
@@ -237,12 +245,16 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
 
     function createOrUpdateLeaseConditions(address tokenAddress, uint256 tokenId, address paymentTokenAddress, uint256 maxTimeDuration, uint256 pricePerBlock)
         onlyOTokenOwner(tokenAddress, tokenId)
+        whenPausedthenProxy
+        onlyAllowlisted
         external {
         _createOrUpdateLeaseConditions(tokenAddress, tokenId, paymentTokenAddress, maxTimeDuration, pricePerBlock);
     }
 
     function deleteLeaseConditions(address tokenAddress, uint256 tokenId)
         onlyOTokenOwner(tokenAddress, tokenId)
+        whenPausedthenProxy
+        onlyAllowlisted
         external {
         delete _leasesConditions[tokenAddress][tokenId];
     }
@@ -251,6 +263,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
         external
         payable
         nonReentrant
+        whenPausedthenProxy
     {
         ORentable oRentable = _getExistingORentable(tokenAddress);
         address from = oRentable.ownerOf(tokenId);
@@ -316,7 +329,11 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
         emit Rent(from, user, tokenAddress, tokenId, leaseId);
     }
 
-    function redeemLease(uint256 leaseId) external nonReentrant {
+    function redeemLease(uint256 leaseId) external
+        nonReentrant
+        whenPausedthenProxy
+        onlyAllowlisted
+    {
         address user = _msgSender();
         require(IERC721(_yToken).ownerOf(leaseId) == user, 'You should own respective yRentable');
         
@@ -381,17 +398,17 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
         emit Claim(user, lease2redeem.tokenAddress, lease2redeem.tokenId, lease2redeem.paymentTokenAddress, amount2Redeem, leaseId);
     }
 
-    function expireLease(uint256 leaseId) external {
+    function expireLease(uint256 leaseId) external whenPausedthenProxy {
         _expireLease(leaseId);
     }
 
-    function expireLeases(uint256[] calldata leaseIds) external {
+    function expireLeases(uint256[] calldata leaseIds) external whenPausedthenProxy {
         for (uint256 i = 0; i < leaseIds.length; i++) {
             _expireLease(leaseIds[i]);
         }
     }
 
-    function afterWTokenTransfer(address tokenAddress, address from, address to, uint256 tokenId) external {
+    function afterWTokenTransfer(address tokenAddress, address from, address to, uint256 tokenId) external whenPausedthenProxy {
         require(_msgSender() == _wrentables[tokenAddress], "Only proper WRentables allowed");
 
         uint256 leaseId = _currentLeases[tokenAddress][tokenId];
@@ -410,7 +427,7 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
     }
 
 
-    function afterOTokenTransfer(address tokenAddress, address from, address to, uint256 tokenId) external {
+    function afterOTokenTransfer(address tokenAddress, address from, address to, uint256 tokenId) external whenPausedthenProxy {
         require(_msgSender() == address(_orentables[tokenAddress]), "Only proper ORentables allowed");
 
         uint256 leaseId = _currentLeases[tokenAddress][tokenId];
@@ -436,7 +453,11 @@ contract Rentable is Ownable, IERC721Receiver, RentableHooks, ReentrancyGuard {
         address from,
         uint256 tokenId,
         bytes calldata data
-    ) public virtual override nonReentrant returns (bytes4) {
+    ) public virtual override nonReentrant whenPausedthenProxy returns (bytes4) {
+        require(
+            !allowlistEnabled || _isAllowlisted(msg.sender),
+            "User not allowed"
+        );
 
         if (data.length == 0) {
             _deposit(_msgSender(), tokenId, from, true);
