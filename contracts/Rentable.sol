@@ -387,21 +387,23 @@ contract Rentable is
     function _expireLease(uint256 leaseId) internal virtual {
         Lease memory lease = _leases[leaseId];
         require(_isExpired(lease), "Current lease still pending");
-        WRentable(_wrentables[lease.tokenAddress]).burn(lease.tokenId);
-        _postExpireRent(
-            leaseId,
-            lease.tokenAddress,
-            lease.tokenId,
-            lease.from,
-            lease.to
-        );
-        emit RentEnds(
-            lease.from,
-            lease.to,
-            lease.tokenAddress,
-            lease.tokenId,
-            leaseId
-        );
+        if (WRentable(_wrentables[lease.tokenAddress]).exists(lease.tokenId)) {
+            WRentable(_wrentables[lease.tokenAddress]).burn(lease.tokenId);
+            _postExpireRent(
+                leaseId,
+                lease.tokenAddress,
+                lease.tokenId,
+                lease.from,
+                lease.to
+            );
+            emit RentEnds(
+                lease.from,
+                lease.to,
+                lease.tokenAddress,
+                lease.tokenId,
+                leaseId
+            );
+        }
     }
 
     function createOrUpdateLeaseConditions(

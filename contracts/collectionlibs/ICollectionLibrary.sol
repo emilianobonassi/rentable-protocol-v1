@@ -32,7 +32,7 @@ interface ICollectionLibrary {
         uint256 tokenId,
         address from,
         address to
-    ) external;
+    ) external payable;
 
     function postWTokenTransfer(
         address tokenAddress,

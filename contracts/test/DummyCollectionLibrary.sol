@@ -84,7 +84,7 @@ contract DummyCollectionLibrary is ICollectionLibrary {
         uint256 tokenId,
         address from,
         address to
-    ) external {
+    ) external payable {
         EternalStorage(_eternalStorage).setAddressValue(
             TOKEN_ADDRESS,
             tokenAddress

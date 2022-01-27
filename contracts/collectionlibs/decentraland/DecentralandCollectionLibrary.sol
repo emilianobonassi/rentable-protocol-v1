@@ -39,7 +39,7 @@ contract DecentralandCollectionLibrary is ICollectionLibrary {
         uint256 tokenId,
         address from,
         address
-    ) external {
+    ) external payable {
         ILandRegistry(tokenAddress).setUpdateOperator(tokenId, from);
     }
 
