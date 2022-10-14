@@ -2,6 +2,8 @@
 
 The Rental Protocol for NFTs
 
+Archived => https://medium.com/@emiliano.bonassi/rentable-is-shutting-down-b80731ef4326
+
 ## Beta Deployment (Mainnet)
 
 Deployer: 0xf6798a60B576658461eeFebf583C2AaECD732334
